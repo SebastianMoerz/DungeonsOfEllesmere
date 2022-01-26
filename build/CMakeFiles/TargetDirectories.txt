@@ -1,0 +1,3 @@
+/home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/build/CMakeFiles/rebuild_cache.dir
+/home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/build/CMakeFiles/edit_cache.dir
+/home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/build/CMakeFiles/Ellesmere.dir
