@@ -174,14 +174,3 @@ int Player::GetDefenseValue () {
   if (_equipped_armor == nullptr) { return GetDefenseBase(); }
   return GetDefenseBase() + _equipped_armor->defense_mod;
 };
-
-
-bool Player::isMyTurn() 
-{
-  ++_turnCounter;        
-  if (_turnCounter > _maxSpeed) {    
-    _turnCounter = 0;
-    return true;
-  }
-  return false;
-}

@@ -14,6 +14,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS} src)
 
-add_executable(Ellesmere src/main.cpp src/game.cpp src/controller.cpp src/renderer.cpp src/player.cpp src/opponent.cpp src/interactive_entity.cpp src/combattant.cpp src/door.cpp)
+add_executable(Ellesmere src/main.cpp src/game.cpp src/controller.cpp src/renderer.cpp src/player.cpp src/opponent.cpp src/interactive_entity.cpp src/combattant.cpp src/door.cpp src/event.cpp)
 string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
 target_link_libraries(Ellesmere ${SDL2_LIBRARIES})

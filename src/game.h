@@ -15,12 +15,13 @@
 #include "combattant.h"
 #include "door.h"
 #include "event.h"
+#include "tiletypes.h"
 
 
 class Game {
  public:
   // constructor
-  Game(std::size_t grid_width, std::size_t grid_height, std::size_t grid_margin, std::size_t opponents, std::size_t mv_speed, std::size_t at_speed, std::size_t player_speed, std::size_t startdist);
+  Game(std::size_t grid_width, std::size_t grid_height, std::size_t grid_margin, std::size_t opponents, std::size_t startdist);
 
   // main method of this class
   void Run(Controller const &controller, Renderer &renderer, std::size_t target_frame_duration);
@@ -46,6 +47,16 @@ class Game {
 
   // calculate damage dealt by attacker
   void HandleFight (Combattant* attacker, Combattant* defender);
+  
+  // game map data
+  // std::vector<SDL_Point> _tilesToNorth{};
+  // std::vector<SDL_Point> _tilesToSouth{};
+  // std::vector<SDL_Point> _tilesToEast{};
+  // std::vector<SDL_Point> _tilesToWest{};
+  
+  std::vector<std::vector<MapTiles::VicinityTileType>> _vicinitymap{};
+  std::vector<std::vector<MapTiles::Type>> _rendermap{};  
+  std::vector<std::vector<Entity::Type>> _obstaclemap{}; // not used yet
 
   // vectors for objects on the game map
   std::vector<std::unique_ptr<Entity>> _wall;
@@ -54,6 +65,7 @@ class Game {
   std::vector<std::unique_ptr<InteractiveE>> _treasure;
   std::vector<std::unique_ptr<Door>> _doors;    
   std::vector<std::unique_ptr<MapEvent>> _events;
+
   
   // no pointer, since number of players is always one
   Player _player;    
@@ -79,7 +91,7 @@ class Game {
   void Update();    
 
   // setting up the game
-  void SetUpPlayer();
+  void SetUpPlayer();  
   void SetUpGameMap(int grid_height, int grid_width, int grid_margin);
   void PlaceOpponents(); 
   void PlaceTreasure();

@@ -6,19 +6,33 @@
 #include "SDL.h"
 
 
-Game::Game(std::size_t grid_width, std::size_t grid_height, std::size_t grid_margin, std::size_t num_opponents, std::size_t mv_speed, std::size_t at_speed, std::size_t player_speed, std::size_t startdist)
-    : _grid_max_x(grid_width), _grid_max_y(grid_height), engine(dev()), _NumberOfOpponents(num_opponents), 
-      _InitialOpponentSpeed(mv_speed), _OpponentAttackSpeed(at_speed), _MinStartDistance(startdist), _MaxPlayerSpeed(player_speed),
+Game::Game(std::size_t grid_width, std::size_t grid_height, std::size_t grid_margin, std::size_t num_opponents, std::size_t startdist)
+    : _grid_max_x(grid_width), _grid_max_y(grid_height), engine(dev()), _NumberOfOpponents(num_opponents), _MinStartDistance(startdist),
       random_w(grid_margin, static_cast<int>(grid_width - grid_margin - 1)),random_h(grid_margin, static_cast<int>(grid_height - grid_margin - 1)) {
+
+
   
+
+  std::cout << _wall.size() << std::endl;
+  _obstaclemap = GameUtils::InitObstacleMap(_rendermap);
+
+  _vicinitymap = GameUtils::GetVicinityMap();
+  /*
+  _tilesToNorth = GameUtils::SetExplorationArea(Entity::Direction::kUp, _vicinitymap);
+  _tilesToSouth = GameUtils::SetExplorationArea(Entity::Direction::kDown, _vicinitymap);
+  _tilesToEast = GameUtils::SetExplorationArea(Entity::Direction::kLeft, _vicinitymap);
+  _tilesToWest = GameUtils::SetExplorationArea(Entity::Direction::kRight, _vicinitymap);
+
+  */
+ 
   SetUpPlayer();
   SetUpGameMap(grid_height, grid_width, grid_margin);
-  PlaceTreasure();
+  //PlaceTreasure();
   PlaceNPCs();
-  PlaceOpponents();
-  PlaceDoors();
-  PlaceEvents(); 
-  WelcomeMessage();
+  //PlaceOpponents();
+  //PlaceDoors();
+  //PlaceEvents(); 
+  //WelcomeMessage();
 }
 
 
@@ -38,7 +52,11 @@ void Game::Run(Controller const &controller, Renderer &renderer, std::size_t tar
     if (!_paused && !_won && _player.alive) {
       Update();
     }
-    renderer.Render(_player, _treasure, _wall, _doors, _opponents, _npcs);
+
+    // without fog of war
+    // renderer.DebugRender(_player, _treasure, _wall, _doors, _opponents, _npcs);
+    // with fog of war (WIP)
+    renderer.Render(_player, _treasure, _wall, _doors, _opponents, _npcs, _vicinitymap, _rendermap);
 
     frame_end = SDL_GetTicks();
 
@@ -66,7 +84,7 @@ void Game::Update() {
   
   // UPDATE PLAYER
   // if user input event in queue, try to move player
-  if (_player.direction != Player::Direction::kNone && _player.isMyTurn()) {
+  if (_player.direction != Player::Direction::kNone && _player.isMyTurnToMove()) {
     
     // calculate the position to which the player wants to move
     SDL_Point requestedPosition = _player.tryMove();
@@ -81,7 +99,7 @@ void Game::Update() {
       if (opponent) {
         // kill player if collision with opponent occured        
         _pathBlocked = true;
-        HandleFight (&_player, opponent);               
+        if (_player.isMyTurnToAttack()) { HandleFight (&_player, opponent); }               
         if (!opponent->alive) {
           std::unique_ptr<InventoryItem> loot = opponent->DropLoot();
           if (loot) {
@@ -350,9 +368,8 @@ void Game::HandleFight (Combattant* attacker, Combattant* defender) {
 }
 
 // eventually all the methods below should be read from file to allow for different game maps/dungeon levels
-void Game::SetUpPlayer() {
-  _player.SetMaxPlayerSpeed(_MaxPlayerSpeed);
-  _player.SetPosition({8,47});
+void Game::SetUpPlayer() {  
+  _player.SetPosition({10,37});
   // SET UP PLAYER INVENTORY
   {
     std::unique_ptr<InventoryItem> item = std::make_unique<InventoryItem>();
@@ -385,42 +402,50 @@ void Game::SetUpGameMap(int grid_height, int grid_width, int grid_margin) {
       _wall.emplace_back(std::make_unique<Entity>(grid_width-grid_margin-1, a, Entity::Type::kObstacle));    // right wall
   }
   */  
- int lower_margin = 4;
- for (std::size_t a = 0; a < grid_width; a++) {  
-      _wall.emplace_back(std::make_unique<Entity>(a, 0, Entity::Type::kObstacle));     // upper wall      
-      switch (a) {
-        case 6 ... 10 : { break; }  // leave entrance to cave open
-        default : 
-          _wall.emplace_back(std::make_unique<Entity>(a, grid_height-lower_margin-1, Entity::Type::kObstacle));   // lower wall - leave some space to simulate the outside of the cave
-      }      
-  }
-  for (std::size_t a = 0; a < grid_height-lower_margin; a++) {
-      _wall.emplace_back(std::make_unique<Entity>(0, a, Entity::Type::kObstacle));             // left wall
-      _wall.emplace_back(std::make_unique<Entity>(grid_width, a, Entity::Type::kObstacle));    // right wall
-  }
-  // inner walls
-  // horizontal walls
-  for (std::size_t a = 0; a < 38; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 35, Entity::Type::kObstacle)); }
-  for (std::size_t a = 40; a < grid_width; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 35,  Entity::Type::kObstacle)); }
-  for (std::size_t a = 0; a < 25; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 23, Entity::Type::kObstacle)); }
-  for (std::size_t a = 34; a < 41; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 10, Entity::Type::kObstacle)); }
-  for (std::size_t a = 34; a < 38; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 28, Entity::Type::kObstacle)); }
 
-  //vertical walls
-  for (std::size_t a = 4; a < 24; a++) { _wall.emplace_back(std::make_unique<Entity>(25, a, Entity::Type::kObstacle)); }
-  _wall.emplace_back(std::make_unique<Entity>(25, 1, Entity::Type::kObstacle));
-  for (std::size_t a = 23; a < 30; a++) { _wall.emplace_back(std::make_unique<Entity>(20, a, Entity::Type::kObstacle)); }
-  for (std::size_t a = 28; a < 36; a++) { _wall.emplace_back(std::make_unique<Entity>(12, a, Entity::Type::kObstacle)); }
-  for (std::size_t a = 10; a < 28; a++) { _wall.emplace_back(std::make_unique<Entity>(34, a, Entity::Type::kObstacle)); }
-  for (std::size_t a = 0; a < 11; a++) { _wall.emplace_back(std::make_unique<Entity>(40, a, Entity::Type::kObstacle)); }
 
-  //pillars
-  _wall.emplace_back(std::make_unique<Entity>(42, 28, Entity::Type::kObstacle));
-  _wall.emplace_back(std::make_unique<Entity>(45, 28, Entity::Type::kObstacle));
-  _wall.emplace_back(std::make_unique<Entity>(46, 28, Entity::Type::kObstacle));
-  _wall.emplace_back(std::make_unique<Entity>(44, 17, Entity::Type::kObstacle));
-  _wall.emplace_back(std::make_unique<Entity>(38, 23, Entity::Type::kObstacle));
-  
+  /* hardcoded PoC map
+
+  int lower_margin = 4;
+  for (std::size_t a = 0; a < grid_width; a++) {  
+        _wall.emplace_back(std::make_unique<Entity>(a, 0, Entity::Type::kObstacle));     // upper wall      
+        switch (a) {
+          case 6 ... 10 : { break; }  // leave entrance to cave open
+          default : 
+            _wall.emplace_back(std::make_unique<Entity>(a, grid_height-lower_margin-1, Entity::Type::kObstacle));   // lower wall - leave some space to simulate the outside of the cave
+        }      
+    }
+    for (std::size_t a = 0; a < grid_height-lower_margin; a++) {
+        _wall.emplace_back(std::make_unique<Entity>(0, a, Entity::Type::kObstacle));             // left wall
+        _wall.emplace_back(std::make_unique<Entity>(grid_width, a, Entity::Type::kObstacle));    // right wall
+    }
+    // inner walls
+    // horizontal walls
+    for (std::size_t a = 0; a < 38; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 35, Entity::Type::kObstacle)); }
+    for (std::size_t a = 40; a < grid_width; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 35,  Entity::Type::kObstacle)); }
+    for (std::size_t a = 0; a < 25; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 23, Entity::Type::kObstacle)); }
+    for (std::size_t a = 34; a < 41; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 10, Entity::Type::kObstacle)); }
+    for (std::size_t a = 34; a < 38; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 28, Entity::Type::kObstacle)); }
+
+    //vertical walls
+    for (std::size_t a = 4; a < 24; a++) { _wall.emplace_back(std::make_unique<Entity>(25, a, Entity::Type::kObstacle)); }
+    _wall.emplace_back(std::make_unique<Entity>(25, 1, Entity::Type::kObstacle));
+    for (std::size_t a = 23; a < 30; a++) { _wall.emplace_back(std::make_unique<Entity>(20, a, Entity::Type::kObstacle)); }
+    for (std::size_t a = 28; a < 36; a++) { _wall.emplace_back(std::make_unique<Entity>(12, a, Entity::Type::kObstacle)); }
+    for (std::size_t a = 10; a < 28; a++) { _wall.emplace_back(std::make_unique<Entity>(34, a, Entity::Type::kObstacle)); }
+    for (std::size_t a = 0; a < 11; a++) { _wall.emplace_back(std::make_unique<Entity>(40, a, Entity::Type::kObstacle)); }
+
+    //pillars
+    _wall.emplace_back(std::make_unique<Entity>(42, 28, Entity::Type::kObstacle));
+    _wall.emplace_back(std::make_unique<Entity>(45, 28, Entity::Type::kObstacle));
+    _wall.emplace_back(std::make_unique<Entity>(46, 28, Entity::Type::kObstacle));
+    _wall.emplace_back(std::make_unique<Entity>(44, 17, Entity::Type::kObstacle));
+    _wall.emplace_back(std::make_unique<Entity>(38, 23, Entity::Type::kObstacle));
+    
+    */
+
+    _rendermap = GameUtils::GetRenderBaseMap("../src/levelmap.txt");
+    _wall = GameUtils::GetWallFromMap(_rendermap);
 }
   
 void Game::PlaceTreasure() {
@@ -504,7 +529,7 @@ void Game::PlaceTreasure() {
 }
   
 void Game::PlaceNPCs() {
-  _npcs.emplace_back(std::make_unique<InteractiveE>(11, 45, "../src/dialogue.txt"));
+  _npcs.emplace_back(std::make_unique<InteractiveE>(12, 35, "../src/dialogue.txt"));
   _npcs.at(0)->SetAsMainQuestGiver();
 }
 
@@ -518,7 +543,7 @@ void Game::PlaceOpponents() {
       point = {x,y};
       // Check if point is not already occupied and not to close to initial player position
       if (!DetectCollision(point, _wall) && DetectCollision(point, _opponents) == nullptr && GameUtils::Heuristic(x, y, _player.GetPosition().x, _player.GetPosition().y) >= _MinStartDistance && y < 34) {
-        _opponents.emplace_back(std::make_unique<Opponent>(x, y, _InitialOpponentSpeed, _OpponentAttackSpeed, Entity::Type::kNPC));      
+        _opponents.emplace_back(std::make_unique<Opponent>(x, y, Entity::Type::kNPC));      
         break;
       }
     }  

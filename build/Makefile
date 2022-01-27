@@ -204,6 +204,33 @@ src/door.cpp.s:
 	$(MAKE) -f CMakeFiles/Ellesmere.dir/build.make CMakeFiles/Ellesmere.dir/src/door.cpp.s
 .PHONY : src/door.cpp.s
 
+src/event.o: src/event.cpp.o
+
+.PHONY : src/event.o
+
+# target to build an object file
+src/event.cpp.o:
+	$(MAKE) -f CMakeFiles/Ellesmere.dir/build.make CMakeFiles/Ellesmere.dir/src/event.cpp.o
+.PHONY : src/event.cpp.o
+
+src/event.i: src/event.cpp.i
+
+.PHONY : src/event.i
+
+# target to preprocess a source file
+src/event.cpp.i:
+	$(MAKE) -f CMakeFiles/Ellesmere.dir/build.make CMakeFiles/Ellesmere.dir/src/event.cpp.i
+.PHONY : src/event.cpp.i
+
+src/event.s: src/event.cpp.s
+
+.PHONY : src/event.s
+
+# target to generate assembly for a file
+src/event.cpp.s:
+	$(MAKE) -f CMakeFiles/Ellesmere.dir/build.make CMakeFiles/Ellesmere.dir/src/event.cpp.s
+.PHONY : src/event.cpp.s
+
 src/game.o: src/game.cpp.o
 
 .PHONY : src/game.o
@@ -384,6 +411,9 @@ help:
 	@echo "... src/door.o"
 	@echo "... src/door.i"
 	@echo "... src/door.s"
+	@echo "... src/event.o"
+	@echo "... src/event.i"
+	@echo "... src/event.s"
 	@echo "... src/game.o"
 	@echo "... src/game.i"
 	@echo "... src/game.s"

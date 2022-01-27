@@ -2,25 +2,6 @@
 #include "SDL.h"
 #include "opponent.h"
 
-bool Opponent::isMyTurnToMove() 
-{
-  ++_turnCounter;        
-  if (_turnCounter>_movementSpeed) {
-    ++_stepsSinceLastAttack;        // increment movement steps
-    _turnCounter = 0;
-    return true;
-  }
-  return false;
-}
-
-bool Opponent::isMyTurnToAttack() 
-{
-  if (_stepsSinceLastAttack >= _attackSpeed) {
-    _stepsSinceLastAttack = 0;
-    return true;
-  }
-  return false;
-}
 
 // try to find the next movement step of this instance
 SDL_Point Opponent::tryMove(SDL_Point nextStepTowardPlayer, SDL_Point playerPosition) 

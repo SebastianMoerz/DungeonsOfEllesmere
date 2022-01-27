@@ -19,16 +19,14 @@ class Opponent : public Entity, public Combattant {
     enum class State { kDead, kIdle, kSearching, kEngaging };
 
     // constructor
-    Opponent(int x, int y, std::size_t mvSpd, std::size_t atSpd, Type type) : Entity(x, y, type), _movementSpeed(mvSpd), _attackSpeed(atSpd) { InitStats(8, 6, 6, 15, Faction::kHostile, "Orc"); }   
+    Opponent(int x, int y, Type type) : Entity(x, y, type)  { InitStats(8, 6, 6, 1, 15, Faction::kHostile, "Orc"); }   
 
-    // movement 
-    bool isMyTurnToMove();
+    // movement  
     SDL_Point BrownianMotion();
     SDL_Point tryMove(SDL_Point nextStepTowardPlayer, SDL_Point playerPosition); 
     void UpdateStateMachine(SDL_Point nextStepTowardPlayer, SDL_Point playerPosition);
 
     // combat - definition of virtual functions of class Combattant
-    bool isMyTurnToAttack();   
     int GetAttackValue () {return GetAttackBase();};
     int GetDefenseValue () { return GetDefenseBase();};
     
@@ -37,11 +35,7 @@ class Opponent : public Entity, public Combattant {
     
    
   private:
-    State _state{State::kIdle};   // NPC state machine
-    int _turnCounter{0};          // game loops since last turn
-    int _stepsSinceLastAttack{0};
-    int _movementSpeed;           // game loops per movement
-    int _attackSpeed;             // move steps per attack
+    State _state{State::kIdle};   // NPC state machine    
     int _perception{10};          // detection threshold for distance to player
 
     // helper function to check if instance has detected the player      

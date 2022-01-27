@@ -2,6 +2,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/Ellesmere.dir/src/combattant.cpp.o"
   "CMakeFiles/Ellesmere.dir/src/controller.cpp.o"
   "CMakeFiles/Ellesmere.dir/src/door.cpp.o"
+  "CMakeFiles/Ellesmere.dir/src/event.cpp.o"
   "CMakeFiles/Ellesmere.dir/src/game.cpp.o"
   "CMakeFiles/Ellesmere.dir/src/interactive_entity.cpp.o"
   "CMakeFiles/Ellesmere.dir/src/main.cpp.o"

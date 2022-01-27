@@ -10,18 +10,15 @@
 // class definition of the player's avatar
 class Player : public Entity, public Combattant {
  public:
-  // constructors and assignment operators 
-  //Player(int grid_width, int grid_height) : Entity(static_cast<int>(grid_width/2), static_cast<int>(grid_height/2), Type::kPlayer) { InitStats(10, 6, 6, 0, Faction::kNDEF, "Player"); }
-  Player() : Entity(_startX, _startY, Type::kPlayer) { InitStats(10, 6, 6, 0, Faction::kNDEF, "Player"); }
+  // constructors and assignment operators   
+  Player() : Entity(_startX, _startY, Type::kPlayer) { InitStats(10, 6, 6, 8, 0, Faction::kNDEF, "Player"); }
 
   Player(const Player & source) = delete;           // delete copy constructor (unique pointers in inventory can't be copied)
   Player &operator=(const Player &source) = delete; // delete copy assignment operator (unique pointers in inventory can't be copied)
 
   // movement
   SDL_Point tryMove();                              // try to move the player into the direction indicated by "direction"
-  Direction direction = Direction::kNone;
-  bool isMyTurn();  
-  void SetMaxPlayerSpeed (int speed) { _maxSpeed = speed; }
+  Direction direction = Direction::kNone;  
   
   // game control methods
   bool hasKey() {return _hasKey; };                       // has the player found the key to the locked door?
@@ -47,10 +44,6 @@ class Player : public Entity, public Combattant {
   int GetTotalXP () { return _XP; } 
 
  private: 
-  // movement
-  int _maxSpeed;
-  long _turnCounter{0};
-
   // inventory
   std::vector<std::unique_ptr<InventoryItem>> _inventory;   // inventory items are stored here
   InventoryItem* _equipped_weapon{nullptr};                 // the weapon the player uses

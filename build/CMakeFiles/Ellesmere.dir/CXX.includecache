@@ -6,10 +6,6 @@
 
 #IncludeRegexTransform: 
 
-/home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/combattant.cpp
-combattant.h
-/home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/combattant.h
-
 /home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/combattant.h
 string
 -
@@ -45,8 +41,14 @@ player.h
 /home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/entity.h
 SDL.h
 /home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/SDL.h
+tiletypes.h
+/home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/tiletypes.h
 string
 -
+
+/home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/event.cpp
+event.h
+/home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/event.h
 
 /home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/event.h
 entity.h
@@ -103,6 +105,8 @@ door.h
 /home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/door.h
 event.h
 /home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/event.h
+tiletypes.h
+/home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/tiletypes.h
 
 /home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/game_utils.h
 algorithm
@@ -111,10 +115,20 @@ string
 -
 vector
 -
+memory
+-
 SDL.h
 /home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/SDL.h
 entity.h
 /home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/entity.h
+tiletypes.h
+/home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/tiletypes.h
+fstream
+-
+iostream
+-
+sstream
+-
 
 /home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/interactive_entity.cpp
 interactive_entity.h
@@ -219,8 +233,12 @@ opponent.h
 /home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/opponent.h
 door.h
 /home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/door.h
+tiletypes.h
+/home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/tiletypes.h
 memory
 -
+
+/home/widgeteer/Desktop/udacity-cpp/capstone/Ellesmere/src/tiletypes.h
 
 /usr/include/SDL2/SDL.h
 SDL_main.h
