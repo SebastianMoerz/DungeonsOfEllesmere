@@ -284,9 +284,7 @@ void Renderer::Render(Player &player, std::vector<std::unique_ptr<InteractiveE>>
 
         if (vicinitymap[x][y] == MapTiles::VicinityTileType::kOutside) { break; }
         if (vicinitymap[x][y] == MapTiles::VicinityTileType::kInside) { _alpha = 0xFF; }
-        if (vicinitymap[x][y] == MapTiles::VicinityTileType::kFringe) { _alpha = 0x55; }
-        
-        if (door->GetDoorType() == Door::DoorType::kRegular) {SDL_SetRenderDrawColor(sdl_renderer, 0xAB, 0x60, 0x43, _alpha);}
+        if (vicinitymap[x][y] == MapTiles::VicinityTileType::kFringe) {3FnderDrawColor(sdl_renderer, 0xAB, 0x60, 0x43, _alpha);}
         if (door->GetDoorType() == Door::DoorType::kDiscovered) {SDL_SetRenderDrawColor(sdl_renderer, 0x77, 0x77, 0x77, _alpha);}
         if (door->GetDoorType() == Door::DoorType::kSecret) {SDL_SetRenderDrawColor(sdl_renderer, 0x99, 0x99, 0x99, _alpha);}
         
@@ -323,9 +321,9 @@ void Renderer::Render(Player &player, std::vector<std::unique_ptr<InteractiveE>>
   block.x = player.GetPosition().x * block.w;
   block.y = player.GetPosition().y * block.h;
   if (player.alive) {
-    SDL_SetRenderDrawColor(sdl_renderer, 0x00, 0x7A, 0xCC, 0xFF);
+    SDL_SetRenderDrawColor(sdl_renderer, 0x00, 0x48, 0xDD, 0xFF);
   } else {
-    SDL_SetRenderDrawColor(sdl_renderer, 0xFF, 0x00, 0x00, 0xFF);
+    SDL_SetRenderDrawColor(sdl_renderer, 0x80, 0x00, 0x00, 0xFF);
   }
   SDL_RenderFillRect(sdl_renderer, &block);
 
@@ -345,10 +343,10 @@ void Renderer::Render(Player &player, std::vector<std::unique_ptr<InteractiveE>>
     _alpha = 0x55;
     break;
   case Player::Vision::kDark1 :
-    _alpha = 0xAA;
+    _alpha = 0x99;
     break;
   case Player::Vision::kDark2 :
-    _alpha = 0xDD;
+    _alpha = 0xCC;
     break;
   case Player::Vision::kDark3 :
     _alpha = 0xEE;

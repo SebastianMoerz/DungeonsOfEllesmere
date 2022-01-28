@@ -7,6 +7,18 @@
 #include "entity.h"
 #include "combattant.h"
 
+// effects that can buff or nerf the player
+struct TimedEffect {
+    // use enum like this to enable other effect types
+    // enum class EffectType { kIllumination, kDamage, kAttackMod, kDefenseMod, kSpeedMod }
+    int timer;
+    int counter{0};
+    int mod;                // currently only illumination
+    std::string msg;    
+    bool expired{false};
+};
+
+
 // class definition of the player's avatar
 class Player : public Entity, public Combattant {
  public:
@@ -30,7 +42,7 @@ class Player : public Entity, public Combattant {
 
   // map vision
   void SetVision(Vision vision) { _vision = vision; }
-  Vision GetVision() { return _vision; }
+  Vision GetVision();
  
   // inventory methods
   void DisplayInventory(); 
@@ -45,6 +57,10 @@ class Player : public Entity, public Combattant {
   int GetAttackValue ();
   int GetDefenseValue ();
 
+  // active effects
+  void AddTimedEffect(int timer, std::string msg, int mod);
+  void UpdateEffects();
+
   // misc
   void ReceiveXP (int xp);          // add xp to player's total XP
   int GetTotalXP () { return _XP; } 
@@ -55,6 +71,9 @@ class Player : public Entity, public Combattant {
   InventoryItem* _equipped_weapon{nullptr};                 // the weapon the player uses
   InventoryItem* _equipped_armor{nullptr};                  // the armor the player wears
 
+  // active effects
+  std::vector<std::unique_ptr<TimedEffect>> _timedEffects;
+  
   // game control
   bool _hasKey{false};
   bool _hasMcGuffin{false};
@@ -62,6 +81,7 @@ class Player : public Entity, public Combattant {
 
   // rendering
   Vision _vision{Vision::kDaylight};
+  int _visionMod{0};
 
   // total player experience points
   int _XP{0}; 

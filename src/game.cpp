@@ -46,9 +46,9 @@ void Game::Run(Controller const &controller, Renderer &renderer, std::size_t tar
     }
 
     // with fog of war (WIP)
-    //renderer.Render(_player, _treasure, _wall, _doors, _opponents, _npcs, _vicinitymap, _rendermap);
+    renderer.Render(_player, _treasure, _wall, _doors, _opponents, _npcs, _vicinitymap, _rendermap);
     // without fog of war (bool = true if screen shall be cleared (default) - set to false if used on top of regular rendering)
-    renderer.DebugRender(_player, _treasure, _wall, _doors, _opponents, _npcs, _events, true);
+    //renderer.DebugRender(_player, _treasure, _wall, _doors, _opponents, _npcs, _events, true);
 
     frame_end = SDL_GetTicks();
 
@@ -78,6 +78,9 @@ void Game::Run(Controller const &controller, Renderer &renderer, std::size_t tar
 void Game::Update() {  
   if (!_player.alive) return;
   
+  // check for timed effect triggers
+  _player.UpdateEffects();
+
   // UPDATE PLAYER
   // if user input event in queue, try to move player
   if (_player.direction != Player::Direction::kNone && _player.isMyTurnToMove()) {
@@ -357,9 +360,17 @@ void Game::HandleFight (Combattant* attacker, Combattant* defender) {
     else { 
         std::string s = ( attacker == &_player ) ? "" : "s";
         std::cout << " and hit" << s << " for " << damage << " points of damage." << std::endl; //
+  
+        float health = static_cast<float>(defender->GetHP()) / static_cast<float>(defender->GetMaxHP());
+        if (health >= 0.8) {std::cout << defender->GetName() << " is bruised." << std::endl; } 
+        else if (health <= 0.0 ) {std::cout << defender->GetName() << " is dead." << std::endl; }   
+        else if (health <= 0.15) {std::cout << defender->GetName() << " is nearly dead." << std::endl; }          
+        else if (health <= 0.3 ) {std::cout << defender->GetName() << " is heavily wounded." << std::endl; }
+        else if (health <= 0.5) {std::cout << defender->GetName() << " is wounded." << std::endl; }
     }
   }
 }
+  
 
 // -----------------
 // HELPER FUNCTIONS
@@ -440,6 +451,13 @@ void Game::SetUpPlayer(int x, int y) {
     item->isSingleUseItem = true;    
     _player.receiveItem(std::move(item), true);    
   }
+  {
+    std::unique_ptr<InventoryItem> item = std::make_unique<InventoryItem>();
+    item->name = "Torch";
+    item->number = 1;    
+    item->isSingleUseItem = true;    
+    _player.receiveItem(std::move(item), true);    
+  }
 }
  
   
@@ -454,23 +472,19 @@ void Game::PlaceDoors() {
   
 }
 
-
 void Game::PlaceOpponents() {
 
-  _opponents.emplace_back(std::make_unique<Opponent>(5, 8, Entity::Type::kNPC));
+  //_opponents.emplace_back(std::make_unique<Opponent>(5, 8, Entity::Type::kNPC));
   _opponents.emplace_back(std::make_unique<Opponent>(7, 4, Entity::Type::kNPC));
   _opponents.emplace_back(std::make_unique<Opponent>(11, 8, Entity::Type::kNPC));
   _opponents.emplace_back(std::make_unique<Opponent>(14, 6, Entity::Type::kNPC));
   _opponents.emplace_back(std::make_unique<Opponent>(29, 21, Entity::Type::kNPC));
 }
- 
-
-
 
 
 void Game::PlaceEvents() {
   // enter cave
-  _events.emplace_back(std::make_unique<MapEvent>(8, 31, "It is dark in hear. The air inside smells like mold."));
+  _events.emplace_back(std::make_unique<MapEvent>(8, 31, "It is dark in here. The air inside smells like mold."));
   _events.back()->AddToArea(9,31);
   _events.back()->AddToArea(10,31);
   _events.back()->AddToArea(11,31);  
@@ -636,7 +650,7 @@ void Game::PlaceTreasure() {
     mcguffin->name = "McGuffin";
     mcguffin->number = 1;    
     mcguffin->isMcGuffin = true;
-    std::string msg = "Tucked against the back of the wall is an ancient chest. Once it was locked, but the it's hinges have long since been corroded away by rust. Inside, you find an odd little thing made entirely out off gold.";
+    std::string msg = "Tucked against the back of the wall is an ancient chest. Once it was locked, but the it's hinges have long since been corroded away by rust. Inside, you find an odd little thing made entirely out off gold.\n";
     _treasure.emplace_back(std::make_unique<InteractiveE>(12, 2, Entity::Type::kChest, msg));
     _treasure.back()->AddItem(std::move(mcguffin));
   }

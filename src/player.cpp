@@ -126,7 +126,16 @@ void Player::SelectItem(int i, bool suppressText) {
     }
     if ( item->isSingleUseItem ) { DeleteFromInventory(item, 1); }      
     return; 
+  }  
+
+  if (item->name == "Torch") { 
+    AddTimedEffect(0, "You light up a torch", 2);
+    AddTimedEffect(10000, "Your torch burns low", 1);
+    AddTimedEffect(12000, "With a last little flicker the torch light expires", 0);
+    if ( item->isSingleUseItem ) { DeleteFromInventory(item, 1); } 
+    return;
   }
+
   if (!suppressText) { 
     std::cout << "---------------" << std::endl;
     std::cout << "Item can not be equipped or used" << std::endl; 
@@ -174,3 +183,74 @@ int Player::GetDefenseValue () {
   if (_equipped_armor == nullptr) { return GetDefenseBase(); }
   return GetDefenseBase() + _equipped_armor->defense_mod;
 };
+
+// add new timed effect
+void Player::AddTimedEffect(int timer, std::string msg, int mod) {
+    _timedEffects.emplace_back(std::make_unique<TimedEffect>());
+    _timedEffects.back()->timer= timer;
+    _timedEffects.back()->mod = mod;
+    _timedEffects.back()->msg = msg;
+}
+
+
+// update timed effects
+void Player::UpdateEffects() {
+    // check timers
+    for (std::unique_ptr<TimedEffect> & effect : _timedEffects) {
+        ++(effect->counter);
+        if (effect->counter > effect->timer) {
+            // apply effect
+            _visionMod = effect->mod;
+            std::cout << "---------------" << std::endl;
+            std::cout << effect->msg << std::endl;
+            // mark as expired
+            effect->expired = true;
+        }
+    }    
+    //remove expired effects    
+    while (true) {
+        auto it = std::find_if(_timedEffects.begin(), _timedEffects.end(), [](std::unique_ptr<TimedEffect> &effect){ return effect->expired;});
+        if (it != _timedEffects.end()) { _timedEffects.erase(it); }
+        else { break; }
+    }    
+    
+  }
+
+// return current player vision e.g. for rendering
+Player::Vision Player::GetVision() { 
+  
+  if (_visionMod == 0) { return _vision; }
+  
+  if (_visionMod == 1) {
+    switch (_vision) {
+      case Player::Vision::kDaylight :
+        return Player::Vision::kDaylight;
+      case Player::Vision::kCavern :
+        return Player::Vision::kDaylight;
+      case Player::Vision::kDark1 :
+        return Player::Vision::kCavern;
+      case Player::Vision::kDark2 :
+        return Player::Vision::kDark1;
+      case Player::Vision::kDark3 :
+        return Player::Vision::kDark2;
+    }
+  }
+
+  if (_visionMod == 2) {
+    switch (_vision) {
+      case Player::Vision::kDaylight :
+        return Player::Vision::kDaylight;
+      case Player::Vision::kCavern :
+        return Player::Vision::kDaylight;
+      case Player::Vision::kDark1 :
+        return Player::Vision::kDaylight;
+      case Player::Vision::kDark2 :
+        return Player::Vision::kCavern;
+      case Player::Vision::kDark3 :
+        return Player::Vision::kDark1;
+    }
+  }
+  
+  // else not implemented, return default
+  return Player::Vision::kDaylight;
+}
