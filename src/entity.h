@@ -26,9 +26,6 @@ class Entity {
   // used e.g. for rendering and for defining behavioral detail in child classes (currently not all types are used)
   enum class Type { kNone, kEvent, kObstacle, kDoor, kTreasure, kLoot, kChest, kNPC, kPlayer }; 
 
-  // WIP: for obstacle tiles
-  // enum class ExplorationStatus { kExplored, kUnexplored };
-
   // for movement
   enum class Direction { kUp, kDown, kLeft, kRight, kNone };              
     
@@ -45,12 +42,9 @@ class Entity {
   bool isMarkedForErasure () { return _eraseFlag; }
   void SetBlocksPath(bool blocksPath) { _blocksPath = blocksPath; }
   bool GetBlocksPath() { return _blocksPath; } 
-  //void SetExplored() { _status = ExplorationStatus::kExplored; } 
-  //bool isExplored() {return _status == ExplorationStatus::kExplored; }
 
 private:
   Type _type{Type::kNone};
-  //ExplorationStatus _status{ ExplorationStatus::kUnexplored };
   SDL_Point _position{0,0}; 
   bool _eraseFlag{false};     // if true, instance will be deleted at end of game loop 
   bool _blocksPath{true};     // if true, moving objects can't move at instance's position

@@ -21,7 +21,7 @@
 class Game {
  public:
   // constructor
-  Game(std::size_t grid_width, std::size_t grid_height, std::size_t grid_margin, std::size_t opponents, std::size_t startdist);
+  Game(std::size_t grid_width, std::size_t grid_height);
 
   // main method of this class
   void Run(Controller const &controller, Renderer &renderer, std::size_t target_frame_duration);
@@ -49,14 +49,11 @@ class Game {
   void HandleFight (Combattant* attacker, Combattant* defender);
   
   // game map data
-  // std::vector<SDL_Point> _tilesToNorth{};
-  // std::vector<SDL_Point> _tilesToSouth{};
-  // std::vector<SDL_Point> _tilesToEast{};
-  // std::vector<SDL_Point> _tilesToWest{};
-  
   std::vector<std::vector<MapTiles::VicinityTileType>> _vicinitymap{};
   std::vector<std::vector<MapTiles::Type>> _rendermap{};  
   std::vector<std::vector<Entity::Type>> _obstaclemap{}; // not used yet
+  std::size_t _grid_max_x;
+  std::size_t _grid_max_y;
 
   // vectors for objects on the game map
   std::vector<std::unique_ptr<Entity>> _wall;
@@ -69,16 +66,8 @@ class Game {
   
   // no pointer, since number of players is always one
   Player _player;    
-  
-  std::size_t _NumberOfFoodItems; 
-  std::size_t _NumberOfOpponents; 
-  std::size_t _InitialOpponentSpeed;
-  std::size_t _OpponentAttackSpeed;
-  std::size_t _MaxPlayerSpeed;
-  std::size_t _MinStartDistance;
-  std::size_t _grid_max_x;
-  std::size_t _grid_max_y;
-
+    
+  // random number engine
   std::random_device dev;
   std::mt19937 engine;
   std::uniform_int_distribution<int> random_w;
@@ -91,8 +80,8 @@ class Game {
   void Update();    
 
   // setting up the game
-  void SetUpPlayer();  
-  void SetUpGameMap(int grid_height, int grid_width, int grid_margin);
+  void SetUpPlayer(int x, int y);  
+  void SetUpGameMap(std::string filepath);
   void PlaceOpponents(); 
   void PlaceTreasure();
   void PlaceNPCs();  

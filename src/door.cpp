@@ -1,6 +1,7 @@
 #include "door.h"
 #include <iostream>
 
+// constructs a door if size 2x1, composed of two entities "wing" and "anchor"
 Door::Door(int x, int y, bool horizontal, bool secret, bool locked) : _anchor(x,y,Entity::Type::kObstacle), _wing(x,y,Entity::Type::kObstacle), _horizontal(horizontal) {
            
     // set _wing position depending on door orientation
@@ -11,6 +12,7 @@ Door::Door(int x, int y, bool horizontal, bool secret, bool locked) : _anchor(x,
     if (secret) { _type = DoorType::kSecret; }
 };
 
+// main interface
 void Door::Interact(Player *player) {
     if (_state == State::kOpen) { return; }
 
@@ -43,6 +45,7 @@ void Door::Interact(Player *player) {
     }
 }
 
+// private method, triggered via interact
 void Door::OpenDoor() {
 
     int x = _anchor.GetPosition().x;

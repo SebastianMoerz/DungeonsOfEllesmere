@@ -1,19 +1,20 @@
 #include <random>
 #include "SDL.h"
 #include "opponent.h"
+#include <iostream>
 
 
 // try to find the next movement step of this instance
 SDL_Point Opponent::tryMove(SDL_Point nextStepTowardPlayer, SDL_Point playerPosition) 
-{      
+{        
   UpdateStateMachine(nextStepTowardPlayer, playerPosition);
 
   switch (_state) {
-    case State::kDead:
+    case State::kDead:   
       return GetPosition();         // return current position, i.e. don't move
-    case State::kIdle:
-      return GetPosition();         // return current position, i.e. don't move
-    case State::kSearching:
+    case State::kIdle:       
+      return GetPosition();         // return current position, i.e. don't move    
+    case State::kSearching:  
       return BrownianMotion();      // random movement
     case State::kEngaging:
       return nextStepTowardPlayer;  // confirm movement toward player

@@ -3,7 +3,8 @@
 
 namespace MapTiles
 {   
-    enum class VicinityTileType { kInside, kFringe, kOutside, kEdgeNorth, kEdgeSouth, kEdgeEast, kEdgeWest, kEdgeNorthEast, kEdgeNorthWest, kEdgeSouthEast, kEdgeSouthWest} ; 
+    //enum class VicinityTileType { kInside, kFringe, kOutside, kEdgeNorth, kEdgeSouth, kEdgeEast, kEdgeWest, kEdgeNorthEast, kEdgeNorthWest, kEdgeSouthEast, kEdgeSouthWest} ; 
+    enum class VicinityTileType { kInside, kFringe, kOutside } ; 
     enum class Type { kBedrock, kInnerWall, kOuterWall, kFloor, kGras };    
     
 } // namespace MapTiles

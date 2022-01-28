@@ -10,6 +10,8 @@
 // class definition of the player's avatar
 class Player : public Entity, public Combattant {
  public:
+
+  enum class Vision { kDaylight, kCavern, kDark1, kDark2, kDark3 };
   // constructors and assignment operators   
   Player() : Entity(_startX, _startY, Type::kPlayer) { InitStats(10, 6, 6, 8, 0, Faction::kNDEF, "Player"); }
 
@@ -26,6 +28,10 @@ class Player : public Entity, public Combattant {
   void SetQuestComplete() { _hasCompletedQuest = true; }
   bool GetQuestComplete() { return _hasCompletedQuest; }
 
+  // map vision
+  void SetVision(Vision vision) { _vision = vision; }
+  Vision GetVision() { return _vision; }
+ 
   // inventory methods
   void DisplayInventory(); 
   void DisplayStatus();
@@ -53,6 +59,9 @@ class Player : public Entity, public Combattant {
   bool _hasKey{false};
   bool _hasMcGuffin{false};
   bool _hasCompletedQuest{false};
+
+  // rendering
+  Vision _vision{Vision::kDaylight};
 
   // total player experience points
   int _XP{0}; 

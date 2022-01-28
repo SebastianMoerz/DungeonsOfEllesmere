@@ -434,6 +434,7 @@ CMakeFiles/Ellesmere.dir/src/player.cpp.o: /usr/include/SDL2/close_code.h
 CMakeFiles/Ellesmere.dir/src/renderer.cpp.o: ../src/combattant.h
 CMakeFiles/Ellesmere.dir/src/renderer.cpp.o: ../src/door.h
 CMakeFiles/Ellesmere.dir/src/renderer.cpp.o: ../src/entity.h
+CMakeFiles/Ellesmere.dir/src/renderer.cpp.o: ../src/event.h
 CMakeFiles/Ellesmere.dir/src/renderer.cpp.o: ../src/interactive_entity.h
 CMakeFiles/Ellesmere.dir/src/renderer.cpp.o: ../src/opponent.h
 CMakeFiles/Ellesmere.dir/src/renderer.cpp.o: ../src/player.h

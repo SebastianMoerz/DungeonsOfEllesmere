@@ -6,35 +6,27 @@
 #include "SDL.h"
 
 
-Game::Game(std::size_t grid_width, std::size_t grid_height, std::size_t grid_margin, std::size_t num_opponents, std::size_t startdist)
-    : _grid_max_x(grid_width), _grid_max_y(grid_height), engine(dev()), _NumberOfOpponents(num_opponents), _MinStartDistance(startdist),
-      random_w(grid_margin, static_cast<int>(grid_width - grid_margin - 1)),random_h(grid_margin, static_cast<int>(grid_height - grid_margin - 1)) {
+// -----------------
+// SETTING UP THE GAME
+// -----------------
 
-
+Game::Game(std::size_t grid_width, std::size_t grid_height) : _grid_max_x(grid_width), _grid_max_y(grid_height), engine(dev()), 
+      random_w(0, static_cast<int>(grid_width - 1)),random_h(0, static_cast<int>(grid_height - 1)) {
   
 
-  std::cout << _wall.size() << std::endl;
-  _obstaclemap = GameUtils::InitObstacleMap(_rendermap);
-
-  _vicinitymap = GameUtils::GetVicinityMap();
-  /*
-  _tilesToNorth = GameUtils::SetExplorationArea(Entity::Direction::kUp, _vicinitymap);
-  _tilesToSouth = GameUtils::SetExplorationArea(Entity::Direction::kDown, _vicinitymap);
-  _tilesToEast = GameUtils::SetExplorationArea(Entity::Direction::kLeft, _vicinitymap);
-  _tilesToWest = GameUtils::SetExplorationArea(Entity::Direction::kRight, _vicinitymap);
-
-  */
- 
-  SetUpPlayer();
-  SetUpGameMap(grid_height, grid_width, grid_margin);
-  //PlaceTreasure();
+  SetUpPlayer(10,37);  
+  SetUpGameMap("../src/levelmap.txt");
+  PlaceTreasure();
   PlaceNPCs();
-  //PlaceOpponents();
-  //PlaceDoors();
-  //PlaceEvents(); 
-  //WelcomeMessage();
+  PlaceOpponents(); 
+  PlaceDoors();
+  PlaceEvents();
+  WelcomeMessage();
 }
 
+// ----------
+// GAME LOOP
+// ----------
 
 void Game::Run(Controller const &controller, Renderer &renderer, std::size_t target_frame_duration) {
   Uint32 title_timestamp = SDL_GetTicks();
@@ -53,10 +45,10 @@ void Game::Run(Controller const &controller, Renderer &renderer, std::size_t tar
       Update();
     }
 
-    // without fog of war
-    // renderer.DebugRender(_player, _treasure, _wall, _doors, _opponents, _npcs);
     // with fog of war (WIP)
-    renderer.Render(_player, _treasure, _wall, _doors, _opponents, _npcs, _vicinitymap, _rendermap);
+    //renderer.Render(_player, _treasure, _wall, _doors, _opponents, _npcs, _vicinitymap, _rendermap);
+    // without fog of war (bool = true if screen shall be cleared (default) - set to false if used on top of regular rendering)
+    renderer.DebugRender(_player, _treasure, _wall, _doors, _opponents, _npcs, _events, true);
 
     frame_end = SDL_GetTicks();
 
@@ -78,6 +70,10 @@ void Game::Run(Controller const &controller, Renderer &renderer, std::size_t tar
   }
 }
 
+
+// ------------------------
+// THE CENTRAL GAME METHOD
+// ------------------------
 
 void Game::Update() {  
   if (!_player.alive) return;
@@ -130,35 +126,34 @@ void Game::Update() {
   // UPDATE OPPONENTS
   // only try to move if it's the opponents turn to avoid unnecessary checkCollision loops.
   for (std::unique_ptr<Opponent> &opponent : _opponents) {
+
     if (opponent->isMyTurnToMove()) {
-      // calculate the position to which the opponent wants to move
-      SDL_Point requestedPosition = opponent->tryMove(GameUtils::MoveTowardTarget(GetMapOfObstacles(), opponent->GetPosition(), _player.GetPosition(), 30), _player.GetPosition());
+      // calculate the position to which the opponent wants to move 
+      SDL_Point requestedPosition = opponent->tryMove(GameUtils::MoveTowardTarget(GetMapOfObstacles(), opponent->GetPosition(), _player.GetPosition(), 20), _player.GetPosition());
       //SDL_Point requestedPosition = opponent->tryMove();
         
-    // init path blocked and check for collisions:
-    _pathBlocked = DetectCollision(requestedPosition, _wall);
-
-    if (!IsOnMap(requestedPosition)) { _pathBlocked = true; };
-
-      if (DetectCollision(requestedPosition, _opponents)) { _pathBlocked = true; };
-      if (DetectCollision(requestedPosition, _doors)) { _pathBlocked = true; };
-
-      if (DetectCollision(requestedPosition, &_player)) {
-        // kill player if collision with opponent occured
-        if (opponent->isMyTurnToAttack()) { HandleFight(opponent.get(), &_player); }
-        _pathBlocked = true;
-      }    
-      if (DetectCollision(requestedPosition, _treasure)) { _pathBlocked = true; }
-      if (DetectCollision(requestedPosition, _npcs)) { _pathBlocked = true; }
-
-      // update position if movement is not blocked by obstacle
-      if (!_pathBlocked) {opponent->SetPosition(requestedPosition);}
-    }   
-  }  
+      // init path blocked and check for collisions: 
+      _pathBlocked = DetectCollision(requestedPosition, _wall);
   
+      if (!IsOnMap(requestedPosition)) { _pathBlocked = true; };
+        if (DetectCollision(requestedPosition, _opponents)) { _pathBlocked = true; };
+        if (DetectCollision(requestedPosition, _doors)) { _pathBlocked = true; };
+ 
+        if (DetectCollision(requestedPosition, &_player)) {
+          // kill player if collision with opponent occured
+          if (opponent->isMyTurnToAttack()) { HandleFight(opponent.get(), &_player); }
+          _pathBlocked = true;
+        }    
+        if (DetectCollision(requestedPosition, _treasure)) { _pathBlocked = true; } 
+        if (DetectCollision(requestedPosition, _npcs)) { _pathBlocked = true; }
+
+        // update position if movement is not blocked by obstacle
+        if (!_pathBlocked) {opponent->SetPosition(requestedPosition);}     
+    } 
+  }   
+
   // "Game Over" message  
   if (!_player.alive) { 
-    std::cout << "---------------" << std::endl; 
     std::cout << "GAME OVER: You were killed!" << std::endl;
     std::cout << "---------------" << std::endl; 
   }
@@ -172,14 +167,10 @@ void Game::Update() {
   CleanUpErasedEntities();
 }
 
-// check if a position is on the game map
-bool Game::IsOnMap(SDL_Point point) {  
-  if ( point.x < 0 ) { return false; }
-  if ( point.y < 0 ) { return false; }
-  if ( point.x >= _grid_max_x ) { return false; }
-  if ( point.y >= _grid_max_y ) { return false; }
-  return true;
-}
+
+// --------------------------------------------------------------------------------------------------------
+// VARIOUS COLLISION DETECTION METHODS - SOME OF WHICH COULD BE MADE OBSOLETE IF _OBSTACLEMAP IS BEING USED
+// --------------------------------------------------------------------------------------------------------
 
 // Collision Detection #1: Collision between Point and Entity (e.g. for collisions between opponent and player)
 bool Game::DetectCollision(SDL_Point point, Entity *entity) {
@@ -248,8 +239,14 @@ void Game::TriggerMapEvents(Player *player, std::vector<std::unique_ptr<MapEvent
   }
 }
 
+
+// -------------------
+// GAME WORLD CONTROL
+// -------------------
+
 // get a representation of the game map where each element is either "kNone" or "kObstacle"
 // used as input for calculating the opponent's movement
+// CAN BE MADE OBSOLETE IF _OBSTACLEMAP IS BEING USED
 std::vector<std::vector<Entity::Type>> Game::GetMapOfObstacles () {
   std::vector<std::vector<Entity::Type>> grid {};
   std::vector<Entity::Type> row {};
@@ -323,6 +320,10 @@ void Game::CleanUpErasedEntities() {
   // currently no erasable NPCs yet
 }
 
+// -----------------
+// COMBAT FUNCTIONS
+// -----------------
+
 // deal damage to defender
 void Game::HandleFight (Combattant* attacker, Combattant* defender) {
   std::cout << "---------------" << std::endl; 
@@ -355,201 +356,23 @@ void Game::HandleFight (Combattant* attacker, Combattant* defender) {
     }          
     else { 
         std::string s = ( attacker == &_player ) ? "" : "s";
-        std::cout << " and hit" << s << " for " << damage << " points of damage." << std::endl; 
-
-        float health = static_cast<float>(defender->GetHP()) / static_cast<float>(defender->GetMaxHP());
-        if (health >= 0.8) {std::cout << defender->GetName() << " is bruised." << std::endl; } 
-        else if (health <= 0.0 ) {std::cout << defender->GetName() << " is dead." << std::endl; }   
-        else if (health <= 0.15) {std::cout << defender->GetName() << " is nearly dead." << std::endl; }          
-        else if (health <= 0.3 ) {std::cout << defender->GetName() << " is heavily wounded." << std::endl; }
-        else if (health <= 0.5) {std::cout << defender->GetName() << " is wounded." << std::endl; }
+        std::cout << " and hit" << s << " for " << damage << " points of damage." << std::endl; //
     }
   }
 }
 
-// eventually all the methods below should be read from file to allow for different game maps/dungeon levels
-void Game::SetUpPlayer() {  
-  _player.SetPosition({10,37});
-  // SET UP PLAYER INVENTORY
-  {
-    std::unique_ptr<InventoryItem> item = std::make_unique<InventoryItem>();
-    item->name = "Rusty Sword";
-    item->number = 1;
-    item->attack_mod = 2;
-    item->isWeapon = true;    
-    _player.receiveItem(std::move(item), true);
-    _player.SelectItem(1, true);
-  }
-  {
-    std::unique_ptr<InventoryItem> item = std::make_unique<InventoryItem>();
-    item->name = "Moldy Bread";
-    item->number = 1;
-    item->healing = 2;
-    item->isSingleUseItem = true;    
-    _player.receiveItem(std::move(item), true);    
-  }
+// -----------------
+// HELPER FUNCTIONS
+// -----------------
+
+// check if a position is on the game map
+bool Game::IsOnMap(SDL_Point point) {  
+  if ( point.x < 0 ) { return false; }
+  if ( point.y < 0 ) { return false; }
+  if ( point.x >= _grid_max_x ) { return false; }
+  if ( point.y >= _grid_max_y ) { return false; }
+  return true;
 }
-
-void Game::SetUpGameMap(int grid_height, int grid_width, int grid_margin) {
-  /*
-  // uncomment to paint unbroken walls around screen    
-  for (std::size_t a = grid_margin; a < grid_width-grid_margin; a++) {  
-      _wall.emplace_back(std::make_unique<Entity>(a, grid_margin, Entity::Type::kObstacle));                 // upper wall      
-      _wall.emplace_back(std::make_unique<Entity>(a, grid_height-grid_margin-1, Entity::Type::kObstacle));   // lower wall      
-  }
-  for (std::size_t a = grid_margin; a < grid_height-grid_margin; a++) {
-      _wall.emplace_back(std::make_unique<Entity>(grid_margin, a, Entity::Type::kObstacle));                 // left wall
-      _wall.emplace_back(std::make_unique<Entity>(grid_width-grid_margin-1, a, Entity::Type::kObstacle));    // right wall
-  }
-  */  
-
-
-  /* hardcoded PoC map
-
-  int lower_margin = 4;
-  for (std::size_t a = 0; a < grid_width; a++) {  
-        _wall.emplace_back(std::make_unique<Entity>(a, 0, Entity::Type::kObstacle));     // upper wall      
-        switch (a) {
-          case 6 ... 10 : { break; }  // leave entrance to cave open
-          default : 
-            _wall.emplace_back(std::make_unique<Entity>(a, grid_height-lower_margin-1, Entity::Type::kObstacle));   // lower wall - leave some space to simulate the outside of the cave
-        }      
-    }
-    for (std::size_t a = 0; a < grid_height-lower_margin; a++) {
-        _wall.emplace_back(std::make_unique<Entity>(0, a, Entity::Type::kObstacle));             // left wall
-        _wall.emplace_back(std::make_unique<Entity>(grid_width, a, Entity::Type::kObstacle));    // right wall
-    }
-    // inner walls
-    // horizontal walls
-    for (std::size_t a = 0; a < 38; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 35, Entity::Type::kObstacle)); }
-    for (std::size_t a = 40; a < grid_width; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 35,  Entity::Type::kObstacle)); }
-    for (std::size_t a = 0; a < 25; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 23, Entity::Type::kObstacle)); }
-    for (std::size_t a = 34; a < 41; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 10, Entity::Type::kObstacle)); }
-    for (std::size_t a = 34; a < 38; a++) { _wall.emplace_back(std::make_unique<Entity>(a, 28, Entity::Type::kObstacle)); }
-
-    //vertical walls
-    for (std::size_t a = 4; a < 24; a++) { _wall.emplace_back(std::make_unique<Entity>(25, a, Entity::Type::kObstacle)); }
-    _wall.emplace_back(std::make_unique<Entity>(25, 1, Entity::Type::kObstacle));
-    for (std::size_t a = 23; a < 30; a++) { _wall.emplace_back(std::make_unique<Entity>(20, a, Entity::Type::kObstacle)); }
-    for (std::size_t a = 28; a < 36; a++) { _wall.emplace_back(std::make_unique<Entity>(12, a, Entity::Type::kObstacle)); }
-    for (std::size_t a = 10; a < 28; a++) { _wall.emplace_back(std::make_unique<Entity>(34, a, Entity::Type::kObstacle)); }
-    for (std::size_t a = 0; a < 11; a++) { _wall.emplace_back(std::make_unique<Entity>(40, a, Entity::Type::kObstacle)); }
-
-    //pillars
-    _wall.emplace_back(std::make_unique<Entity>(42, 28, Entity::Type::kObstacle));
-    _wall.emplace_back(std::make_unique<Entity>(45, 28, Entity::Type::kObstacle));
-    _wall.emplace_back(std::make_unique<Entity>(46, 28, Entity::Type::kObstacle));
-    _wall.emplace_back(std::make_unique<Entity>(44, 17, Entity::Type::kObstacle));
-    _wall.emplace_back(std::make_unique<Entity>(38, 23, Entity::Type::kObstacle));
-    
-    */
-
-    _rendermap = GameUtils::GetRenderBaseMap("../src/levelmap.txt");
-    _wall = GameUtils::GetWallFromMap(_rendermap);
-}
-  
-void Game::PlaceTreasure() {
-  {
-    std::unique_ptr<InventoryItem> somecoins = std::make_unique<InventoryItem>();
-    somecoins->name = "Gold Coin";
-    somecoins->number = 3;
-    std::string msg = "You found some golden coins scattered across the dirty floor.\n";
-
-    _treasure.emplace_back(std::make_unique<InteractiveE>(10, 10, Entity::Type::kTreasure, msg));
-    _treasure.back()->AddItem(std::move(somecoins));
-  }
-  {
-    std::unique_ptr<InventoryItem> morecoins = std::make_unique<InventoryItem>();
-    morecoins->name = "Gold Coin";
-    morecoins->number = 5;
-    std::string msg = "You found some golden coins scattered across the dirty floor.\n";
-
-    _treasure.emplace_back(std::make_unique<InteractiveE>(2, 34, Entity::Type::kTreasure,  msg));
-    _treasure.back()->AddItem(std::move(morecoins));
-  }
-  {
-    std::unique_ptr<InventoryItem> morecoins = std::make_unique<InventoryItem>();
-    morecoins->name = "Gold Coin";
-    morecoins->number = 2;
-    std::string msg = "You found some golden coins scattered across the dirty floor.\n";
-
-    _treasure.emplace_back(std::make_unique<InteractiveE>(4, 41, Entity::Type::kTreasure,  msg));
-    _treasure.back()->AddItem(std::move(morecoins));
-  }
-  {
-    std::unique_ptr<InventoryItem> key = std::make_unique<InventoryItem>();
-    key->name = "Old Bronze Key";
-    key->number = 1;
-    key->isKey = true;
-    std::string msg = "Hidden beneath the rubble you find an old key made out of patinized bronze.\n";
-
-    _treasure.emplace_back(std::make_unique<InteractiveE>(2, 44, Entity::Type::kTreasure,  msg));
-    _treasure.back()->AddItem(std::move(key));
-  }
-
-   {
-    std::unique_ptr<InventoryItem> item = std::make_unique<InventoryItem>();
-    item->name = "Strange-looking Potion";
-    item->number = 1;
-    item->healing = 6;
-    item->isSingleUseItem = true;  
-    std::string msg = "A skeleton lies slouched against the back of the cave. Stalagmites begin to grow on it's ancient bones. \nClutched between it's fingers is a small flacon made of clouded cristal. The reddish liquid inside seems to give of a faint glow.\n"; 
-
-    _treasure.emplace_back(std::make_unique<InteractiveE>(39, 9, Entity::Type::kTreasure,  msg));
-    _treasure.back()->AddItem(std::move(item)); 
-  }
-
-  {
-    std::unique_ptr<InventoryItem> mcguffin = std::make_unique<InventoryItem>();
-    mcguffin->name = "McGuffin";
-    mcguffin->number = 1;    
-    mcguffin->isMcGuffin = true;
-    std::string msg = "You found the legendary Golden McGuffin of King Lazyplot VIII!\n";
-
-    _treasure.emplace_back(std::make_unique<InteractiveE>(5, 20, Entity::Type::kTreasure,  msg));
-    _treasure.back()->AddItem(std::move(mcguffin));    
-  }
-  {
-    std::unique_ptr<InventoryItem> sword = std::make_unique<InventoryItem>();
-    sword->name = "Magic Blade";
-    sword->number = 1;
-    sword->attack_mod = 4;
-    sword->isWeapon = true;  
-    std::unique_ptr<InventoryItem> armor = std::make_unique<InventoryItem>();
-    armor->name = "Sturdy Hauberk";
-    armor->number = 1;
-    armor->attack_mod = 3;
-    armor->isArmor = true;
-    std::string msg = "You find an old wooden chest, covered in cobwebs. You open the lid carefully.\n";
-
-    _treasure.emplace_back(std::make_unique<InteractiveE>(45, 3, Entity::Type::kChest, msg));
-    _treasure.back()->AddItem(std::move(sword));
-    _treasure.back()->AddItem(std::move(armor));
-  }
-}
-  
-void Game::PlaceNPCs() {
-  _npcs.emplace_back(std::make_unique<InteractiveE>(12, 35, "../src/dialogue.txt"));
-  _npcs.at(0)->SetAsMainQuestGiver();
-}
-
-void Game::PlaceOpponents() {
-  int x, y;
-  SDL_Point point;
-  for (int i = 0; i < _NumberOfOpponents; i++) {
-    while (true) {
-      x = random_w(engine);
-      y = random_h(engine);
-      point = {x,y};
-      // Check if point is not already occupied and not to close to initial player position
-      if (!DetectCollision(point, _wall) && DetectCollision(point, _opponents) == nullptr && GameUtils::Heuristic(x, y, _player.GetPosition().x, _player.GetPosition().y) >= _MinStartDistance && y < 34) {
-        _opponents.emplace_back(std::make_unique<Opponent>(x, y, Entity::Type::kNPC));      
-        break;
-      }
-    }  
-  }
-}
- 
 
 void Game::WelcomeMessage() {
   std::cout << std::endl << "-----------------------------------------------------" << std::endl;
@@ -574,18 +397,260 @@ void Game::WelcomeMessage() {
   std::cout << "Now have fun and save the world!" << std::endl;
 }
 
-void Game::PlaceDoors() {
-  // DEMO DOORS
-  _doors.emplace_back(std::make_unique<Door>(38, 35, true, false, true));
-  //_doors.emplace_back(std::make_unique<Door>(34, 40, false, false, true));
-  //_doors.emplace_back(std::make_unique<Door>(25, 40, false, true, true));
+
+
+// ----------------------------------------------------------------------------
+// SETTING UP THE GAME WORLD: READ MAP, INIT PLAYER, PLACE NPCs, TREASURE, etc.
+// ----------------------------------------------------------------------------
+
+
+// read game map from file
+void Game::SetUpGameMap(std::string filepath) {
+ 
+    // read game map from file & store tile type information for rendering
+    _rendermap = GameUtils::GetRenderBaseMap(filepath);
+    
+    // init the (hardcoded) vicinity map (for rendering)
+    _vicinitymap = GameUtils::GetVicinityMap();
+    
+    // init walls for collision detection - can eventually be replaced by _obstaclemap
+    _wall = GameUtils::GetWallFromMap(_rendermap);
+    _obstaclemap = GameUtils::InitObstacleMap(_rendermap); // currently not used yet - also, GameUtils::InitObstacleMap still WIP
+    
+}
+
+// eventually all the methods below should be read from file to allow for different game maps/dungeon levels
+void Game::SetUpPlayer(int x, int y) {  
+  _player.SetPosition({x,y});
+  // SET UP PLAYER INVENTORY
+  {
+    std::unique_ptr<InventoryItem> item = std::make_unique<InventoryItem>();
+    item->name = "Rusty Sword";
+    item->number = 1;
+    item->attack_mod = 2;
+    item->isWeapon = true;    
+    _player.receiveItem(std::move(item), true);
+    _player.SelectItem(1, true);
+  }
+  {
+    std::unique_ptr<InventoryItem> item = std::make_unique<InventoryItem>();
+    item->name = "Moldy Bread";
+    item->number = 1;
+    item->healing = 2;
+    item->isSingleUseItem = true;    
+    _player.receiveItem(std::move(item), true);    
+  }
+}
+ 
+  
+void Game::PlaceNPCs() {
+  _npcs.emplace_back(std::make_unique<InteractiveE>(12, 35, "../src/dialogue.txt"));
+  _npcs.at(0)->SetAsMainQuestGiver();
+}
+
+void Game::PlaceDoors() {  
+  _doors.emplace_back(std::make_unique<Door>(11, 17, true, false, true));  
+  _doors.emplace_back(std::make_unique<Door>(30, 5, true, true, false));
   
 }
 
+
+void Game::PlaceOpponents() {
+
+  _opponents.emplace_back(std::make_unique<Opponent>(5, 8, Entity::Type::kNPC));
+  _opponents.emplace_back(std::make_unique<Opponent>(7, 4, Entity::Type::kNPC));
+  _opponents.emplace_back(std::make_unique<Opponent>(11, 8, Entity::Type::kNPC));
+  _opponents.emplace_back(std::make_unique<Opponent>(14, 6, Entity::Type::kNPC));
+  _opponents.emplace_back(std::make_unique<Opponent>(29, 21, Entity::Type::kNPC));
+}
+ 
+
+
+
+
 void Game::PlaceEvents() {
-  _events.emplace_back(std::make_unique<MapEvent>(6,43,"The air smells like mold."));
-  _events.back()->AddToArea(7,43);
-  _events.back()->AddToArea(8,43);
-  _events.back()->AddToArea(9,43);
-  _events.back()->AddToArea(10,43);
+  // enter cave
+  _events.emplace_back(std::make_unique<MapEvent>(8, 31, "It is dark in hear. The air inside smells like mold."));
+  _events.back()->AddToArea(9,31);
+  _events.back()->AddToArea(10,31);
+  _events.back()->AddToArea(11,31);  
+
+    // dim lights on entering cave
+    _events.emplace_back(std::make_unique<MapEvent>(8, 31, Player::Vision::kCavern, ""));
+    _events.back()->AddToArea(9,31);
+    _events.back()->AddToArea(10,31);
+    _events.back()->AddToArea(11,31);  
+
+    // increase brightness when leaving cave
+    _events.emplace_back(std::make_unique<MapEvent>(8, 32, Player::Vision::kDaylight, ""));
+    _events.back()->AddToArea(9,32);
+    _events.back()->AddToArea(10,32);
+    _events.back()->AddToArea(11,32);  
+
+
+  // rock collection side quest
+  _events.emplace_back(std::make_unique<MapEvent>(4,19, MapEvent::EventType::kCollectionQuest, "", 30, 0));
+  _events.back()->AddToArea(28,1);
+  _events.back()->AddToArea(43,19);
+
+  // enter alcove main cavern
+  _events.emplace_back(std::make_unique<MapEvent>(18,27,"This small alcove is covered almost entirely with stalagmites. Droplets of water drip steady from the ceiling, hidden in the darkness above."));
+  
+  // spot a lizard
+  _events.emplace_back(std::make_unique<MapEvent>(26,14,"You spot a small lizard. It's eyes are milky-white.",1,0));
+
+  // trap
+  _events.emplace_back(std::make_unique<MapEvent>(34,6,"You trip and tumble against the wall. The vibrations break one of the stalagtites above. It crashes down before you even notice it.",0,5));
+  _events.back()->AddToArea(34,7);
+  _events.back()->AddToArea(35,7);
+  _events.back()->AddToArea(33,6);
+  _events.back()->AddToArea(33,7);
+  _events.back()->AddToArea(33,8);
+  _events.back()->AddToArea(34,8);
+  _events.back()->AddToArea(35,8);
+
+  // warn player of trap
+  _events.emplace_back(std::make_unique<MapEvent>(32,6,"There are a lot of stalagtites hanging from the ceiling. Some of them seem rather fragile."));
+  _events.back()->AddToArea(32,7);
+  _events.back()->AddToArea(32,8);
+  _events.back()->AddToArea(33,9);
+  _events.back()->AddToArea(34,9);
+  _events.back()->AddToArea(35,9);
+
+  // light change
+  // increase brightness when leaving corridor
+  _events.emplace_back(std::make_unique<MapEvent>(32, 1, Player::Vision::kCavern, ""));
+  // decrease brightness
+  _events.emplace_back(std::make_unique<MapEvent>(33,1, Player::Vision::kDark1, ""));
+  _events.emplace_back(std::make_unique<MapEvent>(33,1,"The corridor ahead is pitch black."));
+  _events.emplace_back(std::make_unique<MapEvent>(34,1, Player::Vision::kDark2, ""));
+  _events.emplace_back(std::make_unique<MapEvent>(34,1,"Maybe you should return?."));
+  _events.emplace_back(std::make_unique<MapEvent>(35,1, Player::Vision::kDark3, ""));
+  _events.emplace_back(std::make_unique<MapEvent>(35,1,"You can barely see your own hands."));
+
+
+  // a spooky encounter
+  _events.emplace_back(std::make_unique<MapEvent>(47,14,"As you venture deeper into the cave, you hear a strange sound ahead. It almost sounds like a something was moaning in the dark, but you're not quite sure."));
+  _events.back()->AddToArea(48,14);
+  _events.back()->AddToArea(49,14);
+  _events.emplace_back(std::make_unique<MapEvent>(44,23,"You notice a faint blue reflection on the cave wall ahead of you. It seems almost unnatural."));
+  _events.emplace_back(std::make_unique<MapEvent>(45,29,"Toward the back of the room an eerie apparition hovers in mid air. It's tanslucent skin shimmers in different hues of blue. Without lifting it's head, the figure begins to beckon you."));
+}
+
+
+
+ 
+void Game::PlaceTreasure() {
+  // coins
+  {
+    std::unique_ptr<InventoryItem> item = std::make_unique<InventoryItem>();
+    item->name = "Gold Coin";
+    item->number = 3;
+    std::string msg = "You found some golden coins scattered across the dirty floor.\n";
+
+    _treasure.emplace_back(std::make_unique<InteractiveE>(4, 26, Entity::Type::kTreasure, msg));
+    _treasure.back()->AddItem(std::move(item));
+  }
+  {
+    std::unique_ptr<InventoryItem> item = std::make_unique<InventoryItem>();
+    item->name = "Gold Coin";
+    item->number = 1;
+    std::string msg = "You find a single gold coin hidden in the rubble.\n";
+
+    _treasure.emplace_back(std::make_unique<InteractiveE>(48, 20, Entity::Type::kTreasure,  msg));
+    _treasure.back()->AddItem(std::move(item));
+  }
+
+  // add key
+  {
+    std::unique_ptr<InventoryItem> key = std::make_unique<InventoryItem>();
+    key->name = "Old Bronze Key";
+    key->number = 1;
+    key->isKey = true;
+    std::string msg = "A scuffed bronze key lies hidden beneath a pile of gnawed-off bones. You wonder how it ended up here.\n";
+
+    _treasure.emplace_back(std::make_unique<InteractiveE>(34, 15, Entity::Type::kTreasure,  msg));
+    _treasure.back()->AddItem(std::move(key));
+  }
+
+  // rocks
+  {
+    std::unique_ptr<InventoryItem> item = std::make_unique<InventoryItem>();
+    item->name = "Rock";
+    item->number = 1;
+    std::string msg = "You notice a pebble lying in the dust. It appears to be an ordinary stone.\n";
+
+    _treasure.emplace_back(std::make_unique<InteractiveE>(4, 19, Entity::Type::kTreasure, msg));
+    _treasure.back()->AddItem(std::move(item));
+  }
+  {
+    std::unique_ptr<InventoryItem> item = std::make_unique<InventoryItem>();
+    item->name = "Rock";
+    item->number = 1;
+    std::string msg = "You glimpse a small piece of granite. A nice-looking quartz incursion runs along its surface.\n";
+
+    _treasure.emplace_back(std::make_unique<InteractiveE>(28, 1, Entity::Type::kTreasure, msg));
+    _treasure.back()->AddItem(std::move(item));
+  }
+  {
+    std::unique_ptr<InventoryItem> item = std::make_unique<InventoryItem>();
+    item->name = "Rock";
+    item->number = 1;
+    std::string msg = "You find a smooth little rock. It's almost unremarkable. Almost.\n";
+
+    _treasure.emplace_back(std::make_unique<InteractiveE>(43, 19, Entity::Type::kTreasure, msg));
+    _treasure.back()->AddItem(std::move(item));
+  }
+
+  // potions
+  {
+    std::unique_ptr<InventoryItem> item = std::make_unique<InventoryItem>();
+    item->name = "Strange-looking Potion";
+    item->number = 1;
+    item->healing = 6;
+    item->isSingleUseItem = true;  
+    std::string msg = "A skeleton lies slouched against the back of the cave. Stalagmites begin to grow on it's ancient bones. \nClutched between it's fingers is a small flacon made of clouded cristal. The reddish liquid inside seems to give of a faint glow.\n"; 
+
+    _treasure.emplace_back(std::make_unique<InteractiveE>(20, 29, Entity::Type::kTreasure,  msg));
+    _treasure.back()->AddItem(std::move(item)); 
+  }
+
+  // treasure chests
+  {
+    std::unique_ptr<InventoryItem> coins = std::make_unique<InventoryItem>();
+    coins->name = "Gold Coin";
+    coins->number = 3;
+    std::unique_ptr<InventoryItem> armor = std::make_unique<InventoryItem>();
+    armor->name = "Sturdy Hauberk";
+    armor->number = 1;
+    armor->attack_mod = 3;
+    armor->isArmor = true;
+    std::string msg = "You find an old wooden chest, covered in cobwebs. You open the lid carefully.\n";
+
+    _treasure.emplace_back(std::make_unique<InteractiveE>(26, 8, Entity::Type::kChest, msg));
+    _treasure.back()->AddItem(std::move(coins));
+    _treasure.back()->AddItem(std::move(armor));
+  }
+  {
+    std::unique_ptr<InventoryItem> mcguffin = std::make_unique<InventoryItem>();
+    mcguffin->name = "McGuffin";
+    mcguffin->number = 1;    
+    mcguffin->isMcGuffin = true;
+    std::string msg = "Tucked against the back of the wall is an ancient chest. Once it was locked, but the it's hinges have long since been corroded away by rust. Inside, you find an odd little thing made entirely out off gold.";
+    _treasure.emplace_back(std::make_unique<InteractiveE>(12, 2, Entity::Type::kChest, msg));
+    _treasure.back()->AddItem(std::move(mcguffin));
+  }
+
+  {
+    std::unique_ptr<InventoryItem> sword = std::make_unique<InventoryItem>();
+    sword->name = "Magic Blade";
+    sword->number = 1;
+    sword->attack_mod = 4;
+    sword->isWeapon = true;  
+    std::string msg = "As you approach, the apparition lifts its head. THe undead eyes seem to freeze your soul. As it speaks, it's voice is but the memory of a distance echo. 'Fellow traveler! I am the unlucky soul who ventured into this cave before you. Release me from this curse. Take my blade and avenge my death!' With a sigh of sadness and relief, the apparition vanishes into thin air.\n";
+    
+    _treasure.emplace_back(std::make_unique<InteractiveE>(46,34, Entity::Type::kLoot, msg));
+    _treasure.back()->AddItem(std::move(sword));
+  }
+  
 }

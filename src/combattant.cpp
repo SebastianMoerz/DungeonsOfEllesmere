@@ -24,7 +24,7 @@ void Combattant::InitStats(int maxHP, int AT, int DE, int AG, int XP, Faction fa
     _XPvalue = XP;
 };
 
-// check if combattant is allowed to move
+// check if combattant is allowed to movehttps://github.com/SebastianMoerz/CppND_DungeonsOfEllemere
 bool Combattant::isMyTurnToMove() 
 {
   ++_turnCounterMove;
