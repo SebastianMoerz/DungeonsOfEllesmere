@@ -130,8 +130,8 @@ void Player::SelectItem(int i, bool suppressText) {
 
   if (item->name == "Torch") { 
     AddTimedEffect(0, "You light up a torch", 2);
-    AddTimedEffect(10000, "Your torch burns low", 1);
-    AddTimedEffect(12000, "With a last little flicker the torch light expires", 0);
+    AddTimedEffect(7000, "Your torch burns low", 1);
+    AddTimedEffect(9000, "With a last little flicker the torch light expires", 0);
     if ( item->isSingleUseItem ) { DeleteFromInventory(item, 1); } 
     return;
   }

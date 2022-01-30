@@ -13,7 +13,6 @@
 Game::Game(std::size_t grid_width, std::size_t grid_height) : _grid_max_x(grid_width), _grid_max_y(grid_height), engine(dev()), 
       random_w(0, static_cast<int>(grid_width - 1)),random_h(0, static_cast<int>(grid_height - 1)) {
   
-
   SetUpPlayer(10,37);  
   SetUpGameMap("../src/levelmap.txt");
   PlaceTreasure();
@@ -551,8 +550,6 @@ void Game::PlaceEvents() {
   _events.emplace_back(std::make_unique<MapEvent>(45,29,"Toward the back of the room an eerie apparition hovers in mid air. It's tanslucent skin shimmers in different hues of blue. Without lifting it's head, the figure begins to beckon you."));
 }
 
-
-
  
 void Game::PlaceTreasure() {
   // coins
@@ -633,7 +630,7 @@ void Game::PlaceTreasure() {
   {
     std::unique_ptr<InventoryItem> coins = std::make_unique<InventoryItem>();
     coins->name = "Gold Coin";
-    coins->number = 3;
+    coins->number = 10;
     std::unique_ptr<InventoryItem> armor = std::make_unique<InventoryItem>();
     armor->name = "Sturdy Hauberk";
     armor->number = 1;
@@ -659,7 +656,7 @@ void Game::PlaceTreasure() {
     std::unique_ptr<InventoryItem> sword = std::make_unique<InventoryItem>();
     sword->name = "Magic Blade";
     sword->number = 1;
-    sword->attack_mod = 4;
+    sword->attack_mod = 8;
     sword->isWeapon = true;  
     std::string msg = "As you approach, the apparition lifts its head. THe undead eyes seem to freeze your soul. As it speaks, it's voice is but the memory of a distance echo. 'Fellow traveler! I am the unlucky soul who ventured into this cave before you. Release me from this curse. Take my blade and avenge my death!' With a sigh of sadness and relief, the apparition vanishes into thin air.\n";
     

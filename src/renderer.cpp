@@ -284,7 +284,7 @@ void Renderer::Render(Player &player, std::vector<std::unique_ptr<InteractiveE>>
 
         if (vicinitymap[x][y] == MapTiles::VicinityTileType::kOutside) { break; }
         if (vicinitymap[x][y] == MapTiles::VicinityTileType::kInside) { _alpha = 0xFF; }
-        if (vicinitymap[x][y] == MapTiles::VicinityTileType::kFringe) {3FnderDrawColor(sdl_renderer, 0xAB, 0x60, 0x43, _alpha);}
+        if (vicinitymap[x][y] == MapTiles::VicinityTileType::kFringe) {SDL_SetRenderDrawColor(sdl_renderer, 0xAB, 0x60, 0x43, _alpha);}
         if (door->GetDoorType() == Door::DoorType::kDiscovered) {SDL_SetRenderDrawColor(sdl_renderer, 0x77, 0x77, 0x77, _alpha);}
         if (door->GetDoorType() == Door::DoorType::kSecret) {SDL_SetRenderDrawColor(sdl_renderer, 0x99, 0x99, 0x99, _alpha);}
         
