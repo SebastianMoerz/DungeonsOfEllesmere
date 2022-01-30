@@ -25,7 +25,7 @@ At any time during the game, you can:
 * Press (1-9) to use or equip items from your inventory    
 Now have fun and save the world!
 
-<img src="ellesmere.JPG"/>
+<img src="src/ellesmere.JPG"/>
 
 ## Known Bugs and other issues
 
